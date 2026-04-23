@@ -7,20 +7,32 @@ const repo = process.env.GITHUB_REPO!;
 const baseBranch = process.env.GITHUB_BASE_BRANCH || "main";
 const filePath = "src/assets/courses_weighted.json";
 
-const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, "\n");
+function getGithubApp() {
+  const appId = process.env.GITHUB_APP_ID;
+  const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-if (!privateKey) {
-  throw new Error("Missing PRIVATE_KEY");
+  if (!appId) {
+    throw new Error("Missing GITHUB_APP_ID");
+  }
+
+  if (!privateKey) {
+    throw new Error("Missing PRIVATE_KEY");
+  }
+
+  return new App({
+    appId,
+    privateKey,
+    Octokit,
+  });
 }
-
-const app = new App({
-  appId: process.env.GITHUB_APP_ID!,
-  privateKey,
-  Octokit,
-});
 
 export async function POST(req: NextRequest) {
   try {
+    if (!owner || !repo) {
+      throw new Error("Missing GITHUB_OWNER or GITHUB_REPO");
+    }
+
+    const app = getGithubApp();
     const { user, ...newCourse } = await req.json();
 
     const installationId = Number(process.env.GITHUB_INSTALLATION_ID);
